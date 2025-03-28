@@ -54,6 +54,10 @@ app.add_exception_handler(ProjectAccessDeniedException, project_access_denied_ex
 
 app.include_router(projects_router)
 
+@app.get("/health", tags=["health"], summary="Health check endpoint", description="Used for monitoring the application health status")
+async def health_check():
+    return {"status": "ok"}
+
 @app.get("/")
 def read_root():
     return {
