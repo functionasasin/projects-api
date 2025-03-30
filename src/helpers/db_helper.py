@@ -16,6 +16,7 @@ def project_helper(project) -> dict:
         "project_type": project["project_type"],
         "difficulty": project["difficulty"],
         "tech_stack": project.get("tech_stack", []),
+        "features": project.get("features", []),
         "new_features": project.get("new_features", []),
         "justification": project.get("justification", {}),
         "created_at": project.get("created_at").isoformat() if project.get("created_at") else None,

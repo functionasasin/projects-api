@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, Request, Body, Depends
 from bson import ObjectId
+from typing import Literal, Dict, Any
 
 from src.models import ProjectBase, Project, ProjectType, DifficultyLevel, SuccessResponse
 from src.helpers import create_success_response, create_error_response
@@ -39,15 +40,14 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 )
 async def generate_project_route(
     request: Request,
-    project_type: ProjectType = Query(..., description="Project type (frontend, backend, fullstack)"),
-    difficulty: DifficultyLevel = Query(DifficultyLevel.BEGINNER, description="Difficulty level (beginner, intermediate, advanced)")
+    project_type: ProjectType = Query(..., description="Project type (frontend, backend, fullstack)")
 ):
     projects_collection = request.app.state.db.projects
     
     project = await generate_random_project(
         projects_collection=projects_collection,
         project_type=project_type,
-        difficulty=difficulty
+        difficulty=DifficultyLevel.BEGINNER
     )
     
     return create_success_response(
@@ -170,6 +170,7 @@ async def enhance_project_route(
                             "project_type": "frontend",
                             "difficulty": "beginner",
                             "tech_stack": ["React", "Tailwind CSS", "Vite"],
+                            "features": ["Responsive design", "Dark mode", "Contact form", "Project showcase"],
                             "created_at": "2023-03-15T12:30:45.123Z",
                             "updated_at": "2023-03-15T12:30:45.123Z"
                         }
@@ -209,7 +210,8 @@ async def create_project_route(
                 "description": "A responsive portfolio website using React and Tailwind CSS with dark mode support",
                 "project_type": "frontend",
                 "difficulty": "beginner",
-                "tech_stack": ["React", "Tailwind CSS", "Vite"]
+                "tech_stack": ["React", "Tailwind CSS", "Vite"],
+                "features": ["Responsive design", "Dark mode", "Contact form", "Project showcase"]
             }
         ]
     ),
@@ -222,7 +224,8 @@ async def create_project_route(
         description=project_data.description,
         project_type=project_data.project_type,
         difficulty=project_data.difficulty,
-        tech_stack=project_data.tech_stack
+        tech_stack=project_data.tech_stack,
+        features=project_data.features
     )
     
     project_dict = project.model_dump(exclude={"id"})

@@ -46,6 +46,10 @@ class ProjectBase(BaseModel):
         ...,
         description="Technologies used in the project"
     )
+    features: Optional[List[str]] = Field(
+        default=None,
+        description="Features that will be included in the project"
+    )
 
 class Project(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=ObjectId, alias="_id")
@@ -54,6 +58,7 @@ class Project(BaseModel):
     project_type: ProjectType
     difficulty: DifficultyLevel
     tech_stack: List[str]
+    features: Optional[List[str]] = None
     new_features: Optional[List[str]] = None
     justification: Optional[Dict[str, str]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
