@@ -123,30 +123,42 @@ Enhancement Instructions:
 Feature Expansion:
 - Improve upon existing features instead of replacing them.
 - Introduce additional web-focused features that complement the existing ones.
+- Ensure new features are appropriate for the target difficulty level and don't repeat features from lower difficulty levels.
 
 Tech Stack Evolution:
-- CRITICAL: Ensure the tech stack is appropriate for the project type:
-  * For FRONTEND projects: Only include frontend frameworks (React, Vue, Angular, etc.), CSS frameworks, and related technologies.
-  * For BACKEND projects: Only include backend frameworks (Express, Django, Flask, etc.), databases, and server technologies. DO NOT include frontend frameworks like React.
-  * For FULLSTACK projects: Include an appropriate mix of frontend and backend technologies.
+- CRITICAL: The tech stack should STRICTLY INCLUDE ONLY the following types of technologies:
+  1. Frontend frameworks (React, Vue, Angular, Next.js, Nuxt.js, Svelte)
+  2. CSS frameworks (Tailwind CSS, Bootstrap, Material UI)
+  3. Backend frameworks (Express, Django, FastAPI, Flask, Laravel)
+  4. Programming languages (only if not implied by frameworks)
+  5. Databases (MongoDB, PostgreSQL, MySQL, SQLite)
 
-- Provide a diverse and varied tech stack that suits the project requirements.
-- Be creative and consider many different tech stack combinations (don't default to the same few technologies).
-- Consider popular stacks appropriate for the project type, such as:
-  * For frontend: React/Next.js, Vue/Nuxt.js, Angular, Svelte/SvelteKit
-  * For backend: Express/Node.js, Django/Python, Ruby on Rails, FastAPI, Spring Boot
-  * For fullstack: MEAN (MongoDB, Express, Angular, Node.js), MERN (MongoDB, Express, React, Node.js), PERN (PostgreSQL, Express, React, Node.js), FARM (FastAPI, React, MongoDB), LAMP (Linux, Apache, MySQL, PHP)
+- CRITICAL: The tech stack should NEVER INCLUDE the following (these belong in features instead):
+  * Task queues or job processors (Celery, Bull, RabbitMQ)
+  * Web servers (Nginx, Apache)
+  * Caching systems (Redis, Memcached)
+  * Message brokers (Kafka, RabbitMQ)
+  * Authentication systems (JWT, OAuth2, Auth0, Passport)
+  * Container technologies (Docker, Kubernetes)
+  * CI/CD tools (Jenkins, GitHub Actions)
+  * Monitoring tools (Prometheus, Grafana)
+  * API specifications (GraphQL, RESTful)
+  * Specific libraries (Axios, Redux, Lodash)
+  * Cloud services (AWS, Azure, GCP)
 
-- IMPORTANT: Only include frameworks, programming languages, and databases in the tech stack. DO NOT include individual libraries or packages (like Axios, NumPy, or SQLite).
-- IMPORTANT: Avoid redundancy in the tech stack. For example, if you include Next.js, do not also include React since Next.js is built on React. Similarly, if you include Django, don't also list Python separately.
-- For example, good tech stack items are: React OR Next.js (not both), Node.js, PostgreSQL, Django (implies Python), MongoDB, Vue.js, Ruby on Rails, FastAPI, etc.
-- When replacing a technology with a more advanced alternative (like React → Next.js), remove the original technology from the list.
-- Explain why the new technologies improve performance, scalability, or security.
+- CRUCIAL: Maintain tech stack coherence and compatibility
+  * Choose ONE backend language ecosystem (e.g., Node.js/Express OR Python/Django OR Java/Spring Boot)
+  * Do NOT mix incompatible backend frameworks (e.g., don't include both Express and Spring Boot)
+  * Choose technologies that work well together in real-world scenarios
+  * For databases, only include 1-2 that are actually needed (e.g., don't use both MongoDB and PostgreSQL unless there's a specific reason)
+
+- Keep the tech stack focused on 3-5 core technologies for intermediate projects and at most 5 for advanced projects.
+- Avoid redundancy in the tech stack. For example, if you include Next.js, do not also include React.
 
 Web Development Best Practices:
 - Ensure performance optimization techniques are applied.
 - Suggest improvements for accessibility (a11y) and responsive design.
-- Follow security best practices (e.g., CSRF protection, OAuth, etc.).
+- Follow security best practices.
 
 Difficulty-Specific Guidelines:
     """
@@ -155,22 +167,54 @@ Difficulty-Specific Guidelines:
         prompt += """
 For Intermediate Level Enhancements:
 - Introduce 2-3 additional features to improve user experience (e.g., better UI state management, animations, real-time updates).
-- Implement authentication and authorization using JWT or OAuth.
-- Suggest database integration (MongoDB, PostgreSQL, etc.) if missing.
-- Optimize API performance with caching (Redis) or pagination.
+- Include authentication and authorization (JWT, OAuth) as a feature, not as tech stack.
+- Suggest database integration if missing.
+- Add features like caching or pagination for better performance.
         """
     elif target_difficulty == DifficultyLevel.ADVANCED:
-        prompt += """
+        # If we're enhancing from intermediate to advanced, include original features to avoid repetition
+        if current_difficulty == DifficultyLevel.INTERMEDIATE and "new_features" in project_data:
+            existing_features = project_data.get("new_features", [])
+            existing_features_text = ", ".join([f'"{feature}"' for feature in existing_features])
+            prompt += f"""
+For Advanced Level Enhancements:
+- IMPORTANT: Do NOT repeat these existing intermediate features: {existing_features_text}
+- Build upon or extend these features instead of duplicating them.
+- Introduce 3-4 new high-complexity features not present at the intermediate level.
+- Focus on enterprise-grade capabilities like multi-user roles, dynamic permissions, background jobs, AI-powered recommendations.
+- Include advanced authentication mechanisms and role-based access control (RBAC) as features, not tech stack.
+- Add features related to scalability, performance monitoring, or advanced security.
+- Consider features like microservices architecture, real-time communication, or distributed systems.
+            """
+        else:
+            prompt += """
 For Advanced Level Enhancements:
 - Introduce 4-5 high-complexity features (e.g., multi-user roles, dynamic permissions, background jobs, AI-powered recommendations).
-- Implement full authentication and role-based access control (RBAC).
-- Use advanced state management (Redux Toolkit, Zustand, TanStack Query).
-- Suggest microservices, GraphQL, or WebSockets for scalability.
-- Improve security (e.g., rate limiting, encryption, OAuth2 flows).
-- Include DevOps considerations like CI/CD pipelines, containerization (Docker), and cloud deployment strategies.
-        """
+- Include advanced authentication and role-based access control (RBAC) as features, not tech stack.
+- Add features related to state management, microservices, GraphQL, or WebSockets for scalability.
+- Include security features (e.g., rate limiting, encryption, OAuth2 flows).
+- Consider DevOps-related features like CI/CD pipelines, containerization, and cloud deployment strategies.
+            """
     
     prompt += """
+CRITICAL REMINDERS:
+1. Authentication systems (JWT, OAuth2, etc.) should be listed as features, not tech stack.
+2. Keep tech stack strictly limited to core frameworks, languages, and databases.
+3. Don't repeat features across difficulty levels - build upon them instead.
+4. Maintain tech stack coherence - don't mix incompatible backend frameworks (e.g., Express and Spring Boot).
+5. Choose technologies that make sense together in real-world projects.
+6. The following should NEVER be in the tech stack: Task queues (Celery), Web servers (Nginx), Caching systems (Redis), etc.
+
+TECH STACK FORMAT EXAMPLES:
+For a frontend project:
+["React", "Tailwind CSS"]
+
+For a backend project:
+["FastAPI", "PostgreSQL"] OR ["Node.js", "Express", "MongoDB"]
+
+For a fullstack project:
+["React", "Node.js", "Express", "MongoDB"] OR ["Next.js", "PostgreSQL"]
+
 Please return your response as a JSON object with the following structure:
 {
     "description": "Enhanced project description with advanced features.",
