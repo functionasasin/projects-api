@@ -50,7 +50,7 @@ async def enhance_project_with_ai(
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a highly skilled web developer with expertise in frontend, backend, and full-stack web applications. Your task is to enhance web development projects by refining their features and technology stack while maintaining the core idea. The enhancements should be realistic, scalable, and follow industry best practices for modern web applications. Respond strictly in the requested JSON format."
+                    "content": "You are a highly skilled web developer specializing in frontend, backend, and full-stack applications. Your task is to enhance web development projects by refining their features and technology stack while maintaining the core idea. The enhancements should be realistic, scalable, and follow industry best practices. You MUST strictly follow all instructions regarding tech stack composition based on project type. NEVER include backend technologies in frontend projects, and NEVER include frontend technologies in backend projects. Respond strictly in the requested JSON format."
                 },
                 {
                     "role": "user",
@@ -106,6 +106,8 @@ def create_enhancement_prompt(project_data: Dict[str, Any], target_difficulty: D
     project_type = project_data["project_type"]
     
     prompt = f"""
+🚨 **IMPORTANT: THIS IS A {project_type.upper()} PROJECT - FOLLOW TYPE-SPECIFIC RULES FOR TECH STACK!** 🚨
+
 I have a {current_difficulty} level web development project that I want to enhance to {target_difficulty.value} difficulty level.
 
 Original Project Details:
@@ -114,26 +116,40 @@ Title: {project_data["title"]}
 
 Description: {project_data["description"]}
 
-Project Type: {project_type} (Frontend, Backend, or Full-Stack)
+Project Type: {project_type.upper()} (Frontend, Backend, or Full-Stack)
 
 Tech Stack: {', '.join(project_data["tech_stack"])}
 
-Enhancement Instructions:
+🚀 Enhancement Instructions:
 
 Feature Expansion:
 - Improve upon existing features instead of replacing them.
 - Introduce additional web-focused features that complement the existing ones.
 - Ensure new features are appropriate for the target difficulty level and don't repeat features from lower difficulty levels.
 
-Tech Stack Evolution:
-- CRITICAL: The tech stack should STRICTLY INCLUDE ONLY the following types of technologies:
-  1. Frontend frameworks (React, Vue, Angular, Next.js, Nuxt.js, Svelte)
-  2. CSS frameworks (Tailwind CSS, Bootstrap, Material UI)
-  3. Backend frameworks (Express, Django, FastAPI, Flask, Laravel)
-  4. Programming languages (only if not implied by frameworks)
-  5. Databases (MongoDB, PostgreSQL, MySQL, SQLite)
+🔴 TECH STACK RULES BASED ON PROJECT TYPE:
 
-- CRITICAL: The tech stack should NEVER INCLUDE the following (these belong in features instead):
+- **If this is a FRONTEND project:**  
+  ❌ DO NOT include ANY backend frameworks (Express, Django, Node.js, FastAPI, Flask, etc.)  
+  ❌ DO NOT include ANY server technologies or databases  
+  ✅ ONLY use frontend frameworks (React, Vue, Angular, Next.js, etc.) and CSS frameworks  
+
+- **If this is a BACKEND project:**  
+  ❌ DO NOT include ANY frontend frameworks (React, Vue, Angular, Next.js, etc.)  
+  ✅ ONLY use backend frameworks, languages, and databases  
+
+- **If this is a FULLSTACK project:**  
+  ✅ Include a coherent combination of frontend and backend technologies  
+  ❌ DO NOT mix incompatible tech stacks  
+
+CRITICAL: The tech stack should STRICTLY INCLUDE ONLY the following types of technologies:
+  1. Frontend frameworks (React, Vue, Angular, Next.js, Nuxt.js, Svelte) - ONLY FOR FRONTEND OR FULLSTACK
+  2. CSS frameworks (Tailwind CSS, Bootstrap, Material UI) - ONLY FOR FRONTEND OR FULLSTACK
+  3. Backend frameworks (Express, Django, FastAPI, Flask, Laravel) - ONLY FOR BACKEND OR FULLSTACK
+  4. Programming languages (only if not implied by frameworks)
+  5. Databases (MongoDB, PostgreSQL, MySQL, SQLite) - ONLY FOR BACKEND OR FULLSTACK
+
+CRITICAL: The tech stack should NEVER INCLUDE the following (these belong in features instead):
   * Task queues or job processors (Celery, Bull, RabbitMQ)
   * Web servers (Nginx, Apache)
   * Caching systems (Redis, Memcached)
@@ -146,14 +162,14 @@ Tech Stack Evolution:
   * Specific libraries (Axios, Redux, Lodash)
   * Cloud services (AWS, Azure, GCP)
 
-- CRUCIAL: Maintain tech stack coherence and compatibility
+CRUCIAL: Maintain tech stack coherence and compatibility
   * Choose ONE backend language ecosystem (e.g., Node.js/Express OR Python/Django OR Java/Spring Boot)
-  * Do NOT mix incompatible backend frameworks (e.g., don't include both Express and Spring Boot)
+  * Do NOT mix incompatible backend frameworks
   * Choose technologies that work well together in real-world scenarios
-  * For databases, only include 1-2 that are actually needed (e.g., don't use both MongoDB and PostgreSQL unless there's a specific reason)
+  * For databases, only include 1-2 that are actually needed
 
-- Keep the tech stack focused on 3-5 core technologies for intermediate projects and at most 5 for advanced projects.
-- Avoid redundancy in the tech stack. For example, if you include Next.js, do not also include React.
+Keep the tech stack focused on 3-5 core technologies for intermediate projects and at most 5 for advanced projects.
+Avoid redundancy in the tech stack. For example, if you include Next.js, do not also include React.
 
 Web Development Best Practices:
 - Ensure performance optimization techniques are applied.
@@ -196,12 +212,22 @@ For Advanced Level Enhancements:
 - Consider DevOps-related features like CI/CD pipelines, containerization, and cloud deployment strategies.
             """
     
+    # Add the project type reminder with an f-string
+    prompt += f"""
+🔴 FINAL CRITICAL REMINDER: This is a {project_type.upper()} project. Your tech stack MUST be appropriate for this project type.
+
+- For FRONTEND projects: ONLY include frontend technologies (React, Next.js, Vue, etc.)
+- For BACKEND projects: ONLY include backend technologies (Express, Django, etc.)
+- For FULLSTACK projects: Include compatible frontend AND backend technologies 
+"""
+
+    # Add the critical reminders and JSON format as a regular string (not an f-string)
     prompt += """
 CRITICAL REMINDERS:
 1. Authentication systems (JWT, OAuth2, etc.) should be listed as features, not tech stack.
 2. Keep tech stack strictly limited to core frameworks, languages, and databases.
 3. Don't repeat features across difficulty levels - build upon them instead.
-4. Maintain tech stack coherence - don't mix incompatible backend frameworks (e.g., Express and Spring Boot).
+4. Maintain tech stack coherence - don't mix incompatible backend frameworks.
 5. Choose technologies that make sense together in real-world projects.
 6. The following should NEVER be in the tech stack: Task queues (Celery), Web servers (Nginx), Caching systems (Redis), etc.
 
