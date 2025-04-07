@@ -43,17 +43,33 @@ def add_cors_middleware(app: FastAPI) -> None:
     Args:
         app: The FastAPI application instance
     """
-    origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+    # Check
+    env = os.getenv("ENVIRONMENT", "development").lower()
+    is_production = env in ["prod", "production"]
+    origins_str = os.getenv("ALLOWED_ORIGINS", "")
     
-    if "localhost" not in origins_str:
-        origins_str += ",http://localhost:5173"
+    # In development, default to localhost
+    if not origins_str and not is_production:
+        origins_str = "http://localhost:5173,http://localhost:3000"
     
-    origins = [origin.strip() for origin in origins_str.split(",")]
-    origins = [origin[:-1] if origin.endswith("/") else origin for origin in origins]
+    # In production, enforce explicit origins setting
+    if not origins_str and is_production:
+        print("WARNING: No ALLOWED_ORIGINS set in production environment. Defaulting to no cross-origin requests.")
+        origins_str = ""  # Empty by default in production
     
-    if not origins:
+    if origins_str:
+        origins = [origin.strip() for origin in origins_str.split(",")]
+        origins = [origin[:-1] if origin.endswith("/") else origin for origin in origins]
+    else:
+        origins = []
+    
+    if is_production:
+        print(f"PRODUCTION MODE: Setting up CORS middleware with origins: {origins or 'None (same-origin only)'}")
+    else:
+        print(f"DEVELOPMENT MODE: Setting up CORS middleware with origins: {origins or '*'}")
+    
+    # In development, allow all origins if none specified
+    if not origins and not is_production:
         origins = ["*"]
-    
-    print(f"Cors setup with origins: {origins}")
     
     app.add_middleware(CustomCORSMiddleware, allowed_origins=origins) 
