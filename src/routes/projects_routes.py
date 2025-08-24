@@ -40,14 +40,22 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 )
 async def generate_project_route(
     request: Request,
-    project_type: ProjectType = Query(..., description="Project type (frontend, backend, fullstack)")
+    project_type: ProjectType = Query(..., description="Project type (frontend, backend, fullstack)"),
+    session_id: str = Query(None, description="Session ID to track recently generated projects"),
+    exclude_titles: str = Query(None, description="Comma-separated list of project titles to exclude")
 ):
     projects_collection = request.app.state.db.projects
+    
+    # if provided, parse excluded titles
+    excluded_titles = []
+    if exclude_titles:
+        excluded_titles = [title.strip() for title in exclude_titles.split(",") if title.strip()]
     
     project = await generate_random_project(
         projects_collection=projects_collection,
         project_type=project_type,
-        difficulty=DifficultyLevel.BEGINNER
+        difficulty=DifficultyLevel.BEGINNER,
+        excluded_titles=excluded_titles
     )
     
     return create_success_response(

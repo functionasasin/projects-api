@@ -10,7 +10,8 @@ from src.services.openai_services import enhance_project_with_ai
 async def generate_random_project(
     projects_collection: AsyncIOMotorCollection,
     project_type: ProjectType,
-    difficulty: DifficultyLevel
+    difficulty: DifficultyLevel,
+    excluded_titles: List[str] = None
 ) -> Dict[str, Any]:
     """
     Generate a random project based on project type and difficulty level.
@@ -19,6 +20,7 @@ async def generate_random_project(
         projects_collection: MongoDB collection for projects
         project_type: Type of project (frontend, backend, fullstack)
         difficulty: Difficulty level (beginner, intermediate, advanced)
+        excluded_titles: List of project titles to exclude from selection
     
     Returns:
         A randomly selected project matching the criteria
@@ -31,10 +33,29 @@ async def generate_random_project(
         "difficulty": difficulty.value
     }
     
+    # Add exclusion filter if titles are provided
+    if excluded_titles:
+        query["title"] = {"$nin": excluded_titles}
+    
     # Count matching projects
     count = await projects_collection.count_documents(query)
     
     if count == 0:
+        # If no projects found with exclusions, try without exclusions
+        if excluded_titles:
+            fallback_query = {
+                "project_type": project_type.value,
+                "difficulty": difficulty.value
+            }
+            fallback_count = await projects_collection.count_documents(fallback_query)
+            
+            if fallback_count > 0:
+                # Select from all available projects as fallback
+                random_index = random.randint(0, fallback_count - 1)
+                cursor = projects_collection.find(fallback_query).skip(random_index).limit(1)
+                project = await cursor.next()
+                return project_helper(project)
+        
         raise ResourceNotFoundException(
             resource_name="Projects",
             message="No projects found matching the selected criteria"
