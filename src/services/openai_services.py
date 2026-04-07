@@ -1,112 +1,90 @@
-"""
-OpenAI services for enhancing projects to different difficulty levels.
-"""
-
 import json
 from datetime import datetime, timezone
-from typing import Dict, Any
-from motor.motor_asyncio import AsyncIOMotorCollection
-from openai import OpenAI
-from src.models.project_model import DifficultyLevel
-from src.core import ResourceNotFoundException
-from src.helpers import project_helper
-from src.config import OPENAI_API_KEY
+from typing import Any, Dict
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+from motor.motor_asyncio import AsyncIOMotorCollection
+from openai import AsyncOpenAI
+
+from src.helpers import project_helper
+from src.models.project_model import DifficultyLevel
+
 
 async def enhance_project_with_ai(
     projects_collection: AsyncIOMotorCollection,
+    openai_client: AsyncOpenAI,
     project_data: Dict[str, Any],
-    target_difficulty: DifficultyLevel
+    target_difficulty: DifficultyLevel,
 ) -> Dict[str, Any]:
-    """
-    Enhance a project to a higher difficulty level using OpenAI.
-    
-    Args:
-        projects_collection: MongoDB collection for projects
-        project_data: The original project data to enhance
-        target_difficulty: The target difficulty level to enhance to
-        
-    Returns:
-        The enhanced project data
-    """
     # Check if an enhanced version already exists in the database
-    # Include project_type and tech_stack to ensure uniqueness
-    enhanced_project = await projects_collection.find_one({
-        "title": project_data["title"],
-        "project_type": project_data["project_type"],
-        "difficulty": target_difficulty.value,
-        "tech_stack": {"$elemMatch": {"$in": project_data["tech_stack"]}}  # At least one matching tech
-    })
-    
+    enhanced_project = await projects_collection.find_one(
+        {
+            "title": project_data["title"],
+            "project_type": project_data["project_type"],
+            "difficulty": target_difficulty.value,
+            "tech_stack": {"$elemMatch": {"$in": project_data["tech_stack"]}},
+        }
+    )
+
     if enhanced_project:
         return project_helper(enhanced_project)
-    
-    prompt = create_enhancement_prompt(project_data, target_difficulty)
-    
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a highly skilled web developer specializing in frontend, backend, and full-stack applications. Your task is to enhance web development projects by refining their features and technology stack while maintaining the core idea. The enhancements should be realistic, scalable, and follow industry best practices. You MUST strictly follow all instructions regarding tech stack composition based on project type. NEVER include backend technologies in frontend projects, and NEVER include frontend technologies in backend projects. Respond strictly in the requested JSON format."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        enhanced_data = json.loads(completion.choices[0].message.content)
-        
-        # Validate and prepare the enhanced project for saving
-        enhanced_project = {
-            "title": project_data["title"],  # Keep the same title
-            "description": enhanced_data["description"],
-            "project_type": project_data["project_type"],  # Keep the same project type
-            "difficulty": target_difficulty.value,
-            "tech_stack": enhanced_data["tech_stack"],
-            "new_features": enhanced_data["new_features"],
-            "justification": enhanced_data["justification"],
-            "original_project_id": project_data.get("_id"),  # Reference to the original project
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc)
-        }
-        
-        # Save the enhanced project to the database
-        result = await projects_collection.insert_one(enhanced_project)
-        
-        # Retrieve the saved project
-        saved_project = await projects_collection.find_one({"_id": result.inserted_id})
-        
-        return project_helper(saved_project)
-        
-    except Exception as e:
-        print(f"Error enhancing project with AI: {str(e)}")
-        raise ResourceNotFoundException(
-            resource_name="Enhanced Project",
-            message="Unable to generate an enhanced version of this project"
-        )
 
-def create_enhancement_prompt(project_data: Dict[str, Any], target_difficulty: DifficultyLevel) -> str:
-    """
-    Creates a prompt for enhancing a project to a higher difficulty level.
-    
-    Args:
-        project_data: The original project data
-        target_difficulty: The target difficulty level
-        
-    Returns:
-        A string prompt for the OpenAI API
-    """
+    prompt = create_enhancement_prompt(project_data, target_difficulty)
+
+    completion = await openai_client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a highly skilled web developer specializing in frontend, "
+                    "backend, and full-stack applications. Your task is to enhance web "
+                    "development projects by refining their features and technology stack "
+                    "while maintaining the core idea. The enhancements should be realistic, "
+                    "scalable, and follow industry best practices. You MUST strictly follow "
+                    "all instructions regarding tech stack composition based on project type. "
+                    "NEVER include backend technologies in frontend projects, and NEVER "
+                    "include frontend technologies in backend projects. Respond strictly in "
+                    "the requested JSON format."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        response_format={"type": "json_object"},
+    )
+
+    content = completion.choices[0].message.content
+    if not content:
+        raise ValueError("OpenAI returned an empty response")
+
+    enhanced_data = json.loads(content)
+
+    enhanced_project = {
+        "title": project_data["title"],
+        "description": enhanced_data["description"],
+        "project_type": project_data["project_type"],
+        "difficulty": target_difficulty.value,
+        "tech_stack": enhanced_data["tech_stack"],
+        "new_features": enhanced_data["new_features"],
+        "justification": enhanced_data["justification"],
+        "original_project_id": project_data.get("_id"),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    result = await projects_collection.insert_one(enhanced_project)
+    saved_project = await projects_collection.find_one({"_id": result.inserted_id})
+
+    return project_helper(saved_project)
+
+
+def create_enhancement_prompt(
+    project_data: Dict[str, Any], target_difficulty: DifficultyLevel
+) -> str:
     current_difficulty = project_data["difficulty"]
     project_type = project_data["project_type"]
-    
+
     prompt = f"""
-🚨 **IMPORTANT: THIS IS A {project_type.upper()} PROJECT - FOLLOW TYPE-SPECIFIC RULES FOR TECH STACK!** 🚨
+\U0001f6a8 **IMPORTANT: THIS IS A {project_type.upper()} PROJECT - FOLLOW TYPE-SPECIFIC RULES FOR TECH STACK!** \U0001f6a8
 
 I have a {current_difficulty} level web development project that I want to enhance to {target_difficulty.value} difficulty level.
 
@@ -120,27 +98,27 @@ Project Type: {project_type.upper()} (Frontend, Backend, or Full-Stack)
 
 Tech Stack: {', '.join(project_data["tech_stack"])}
 
-🚀 Enhancement Instructions:
+\U0001f680 Enhancement Instructions:
 
 Feature Expansion:
 - Improve upon existing features instead of replacing them.
 - Introduce additional web-focused features that complement the existing ones.
 - Ensure new features are appropriate for the target difficulty level and don't repeat features from lower difficulty levels.
 
-🔴 TECH STACK RULES BASED ON PROJECT TYPE:
+\U0001f534 TECH STACK RULES BASED ON PROJECT TYPE:
 
-- **If this is a FRONTEND project:**  
-  ❌ DO NOT include ANY backend frameworks (Express, Django, Node.js, FastAPI, Flask, etc.)  
-  ❌ DO NOT include ANY server technologies or databases  
-  ✅ ONLY use frontend frameworks (React, Vue, Angular, Next.js, etc.) and CSS frameworks  
+- **If this is a FRONTEND project:**
+  \u274c DO NOT include ANY backend frameworks (Express, Django, Node.js, FastAPI, Flask, etc.)
+  \u274c DO NOT include ANY server technologies or databases
+  \u2705 ONLY use frontend frameworks (React, Vue, Angular, Next.js, etc.) and CSS frameworks
 
-- **If this is a BACKEND project:**  
-  ❌ DO NOT include ANY frontend frameworks (React, Vue, Angular, Next.js, etc.)  
-  ✅ ONLY use backend frameworks, languages, and databases  
+- **If this is a BACKEND project:**
+  \u274c DO NOT include ANY frontend frameworks (React, Vue, Angular, Next.js, etc.)
+  \u2705 ONLY use backend frameworks, languages, and databases
 
-- **If this is a FULLSTACK project:**  
-  ✅ Include a coherent combination of frontend and backend technologies  
-  ❌ DO NOT mix incompatible tech stacks  
+- **If this is a FULLSTACK project:**
+  \u2705 Include a coherent combination of frontend and backend technologies
+  \u274c DO NOT mix incompatible tech stacks
 
 CRITICAL: The tech stack should STRICTLY INCLUDE ONLY the following types of technologies:
   1. Frontend frameworks (React, Vue, Angular, Next.js, Nuxt.js, Svelte) - ONLY FOR FRONTEND OR FULLSTACK
@@ -178,7 +156,7 @@ Web Development Best Practices:
 
 Difficulty-Specific Guidelines:
     """
-    
+
     if target_difficulty == DifficultyLevel.INTERMEDIATE:
         prompt += """
 For Intermediate Level Enhancements:
@@ -188,10 +166,14 @@ For Intermediate Level Enhancements:
 - Add features like caching or pagination for better performance.
         """
     elif target_difficulty == DifficultyLevel.ADVANCED:
-        # If we're enhancing from intermediate to advanced, include original features to avoid repetition
-        if current_difficulty == DifficultyLevel.INTERMEDIATE and "new_features" in project_data:
+        if (
+            current_difficulty == DifficultyLevel.INTERMEDIATE
+            and "new_features" in project_data
+        ):
             existing_features = project_data.get("new_features", [])
-            existing_features_text = ", ".join([f'"{feature}"' for feature in existing_features])
+            existing_features_text = ", ".join(
+                [f'"{feature}"' for feature in existing_features]
+            )
             prompt += f"""
 For Advanced Level Enhancements:
 - IMPORTANT: Do NOT repeat these existing intermediate features: {existing_features_text}
@@ -211,17 +193,15 @@ For Advanced Level Enhancements:
 - Include security features (e.g., rate limiting, encryption, OAuth2 flows).
 - Consider DevOps-related features like CI/CD pipelines, containerization, and cloud deployment strategies.
             """
-    
-    # Add the project type reminder with an f-string
+
     prompt += f"""
-🔴 FINAL CRITICAL REMINDER: This is a {project_type.upper()} project. Your tech stack MUST be appropriate for this project type.
+\U0001f534 FINAL CRITICAL REMINDER: This is a {project_type.upper()} project. Your tech stack MUST be appropriate for this project type.
 
 - For FRONTEND projects: ONLY include frontend technologies (React, Next.js, Vue, etc.)
 - For BACKEND projects: ONLY include backend technologies (Express, Django, etc.)
-- For FULLSTACK projects: Include compatible frontend AND backend technologies 
+- For FULLSTACK projects: Include compatible frontend AND backend technologies
 """
 
-    # Add the critical reminders and JSON format as a regular string (not an f-string)
     prompt += """
 CRITICAL REMINDERS:
 1. Authentication systems (JWT, OAuth2, etc.) should be listed as features, not tech stack.
@@ -252,5 +232,5 @@ Please return your response as a JSON object with the following structure:
     }
 }
     """
-    
+
     return prompt
