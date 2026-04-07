@@ -1,15 +1,24 @@
-import os
-from dotenv import load_dotenv
+from functools import lru_cache
 
-# Load environment variables
-load_dotenv()
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# MongoDB configuration
-MONGODB_URL = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("DB_NAME")
 
-# OpenAI configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-# API Security
-API_KEY = os.getenv("API_KEY")
+    mongo_uri: str
+    db_name: str
+    openai_api_key: str
+    api_key: str
+    allowed_origins: str = "*"
+
+    @computed_field
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()  # type: ignore[call-arg]
