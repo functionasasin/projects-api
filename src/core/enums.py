@@ -13,8 +13,8 @@ class HTTPStatusCodes(Enum):
 
 
 class ErrorCodes(Enum):
-    RESOURCE_NOT_FOUND = "ResourceNotFound"
-    VALIDATION_ERROR = "ValidationError"
-    EMPTY_CONTENT = "EmptyContent"
-    INVALID_ID = "InvalidID"
-    PROJECT_ACCESS_DENIED = "ProjectAccessDenied"
+    RESOURCE_NOT_FOUND = "NOT_FOUND"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    EMPTY_CONTENT = "EMPTY_CONTENT"
+    INVALID_ID = "INVALID_ID"
+    PROJECT_ACCESS_DENIED = "PROJECT_ACCESS_DENIED"
