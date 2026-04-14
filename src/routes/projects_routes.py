@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, Depends, Query
 
 from src.core import HTTPStatusCodes, InvalidIDException, get_api_key
-from src.dependencies import OpenAIClient, ProjectsCollection
+from src.dependencies import GeminiClient, ProjectsCollection
 from src.helpers import create_error_response, create_success_response
 from src.models import DifficultyLevel, Project, ProjectBase, ProjectType, SuccessResponse
 from src.services import create_new_project, delete_project, enhance_project, generate_random_project
@@ -125,7 +125,7 @@ async def generate_project_route(
 )
 async def enhance_project_route(
     projects_collection: ProjectsCollection,
-    openai_client: OpenAIClient,
+    gemini_client: GeminiClient,
     title: str = Query(..., description="Title of the project to enhance"),
     current_difficulty: DifficultyLevel = Query(..., description="Current difficulty level of the project"),
     target_difficulty: DifficultyLevel = Query(
@@ -143,7 +143,7 @@ async def enhance_project_route(
 
     enhanced_project = await enhance_project(
         projects_collection=projects_collection,
-        openai_client=openai_client,
+        gemini_client=gemini_client,
         title=title,
         target_difficulty=target_difficulty,
         current_difficulty=current_difficulty,

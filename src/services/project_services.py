@@ -2,13 +2,13 @@ import random
 from typing import Any, Dict, List, Optional
 
 from bson.objectid import ObjectId
+from google import genai
 from motor.motor_asyncio import AsyncIOMotorCollection
-from openai import AsyncOpenAI
 
 from src.core import ResourceNotFoundException
 from src.helpers import project_helper
 from src.models.project_model import DifficultyLevel, ProjectType
-from src.services.openai_services import enhance_project_with_ai
+from src.services.gemini_services import enhance_project_with_ai
 
 
 async def generate_random_project(
@@ -72,7 +72,7 @@ async def find_project_by_title_and_difficulty(
 
 async def enhance_project(
     projects_collection: AsyncIOMotorCollection,
-    openai_client: AsyncOpenAI,
+    gemini_client: genai.Client,
     title: str,
     target_difficulty: DifficultyLevel,
     current_difficulty: Optional[DifficultyLevel] = None,
@@ -108,7 +108,7 @@ async def enhance_project(
 
     return await enhance_project_with_ai(
         projects_collection=projects_collection,
-        openai_client=openai_client,
+        gemini_client=gemini_client,
         project_data=current_project,
         target_difficulty=target_difficulty,
     )
