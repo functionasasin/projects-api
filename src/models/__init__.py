@@ -7,4 +7,8 @@ from src.models.project_model import (
 from src.models.response_model import (
     SuccessResponse,
     ErrorResponse
-) 
+)
+from src.models.ai_response_model import (
+    EnhancedProjectResponse,
+    EnhancementJustification,
+)
