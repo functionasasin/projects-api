@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     mongo_uri: str
     db_name: str
-    openai_api_key: str
+    gemini_api_key: str
     api_key: str
     allowed_origins: str = "*"
 

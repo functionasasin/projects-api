@@ -1,8 +1,8 @@
 from typing import Annotated
 
 from fastapi import Depends, Request
+from google import genai
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
-from openai import AsyncOpenAI
 
 from src.config import Settings, get_settings
 
@@ -17,12 +17,12 @@ def get_projects_collection(
     return db.projects
 
 
-def get_openai_client(
+def get_gemini_client(
     settings: Settings = Depends(get_settings),
-) -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=settings.openai_api_key)
+) -> genai.Client:
+    return genai.Client(api_key=settings.gemini_api_key)
 
 
 # Reusable type aliases for route signatures
 ProjectsCollection = Annotated[AsyncIOMotorCollection, Depends(get_projects_collection)]
-OpenAIClient = Annotated[AsyncOpenAI, Depends(get_openai_client)]
+GeminiClient = Annotated[genai.Client, Depends(get_gemini_client)]
