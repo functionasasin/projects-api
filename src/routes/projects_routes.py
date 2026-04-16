@@ -46,7 +46,6 @@ _enhance_limiter = RateLimiter(limiter=Limiter(Rate(5, Duration.MINUTE)))
 async def generate_project_route(
     projects_collection: ProjectsCollection,
     project_type: ProjectType = Query(..., description="Project type (frontend, backend, fullstack)"),
-    session_id: str = Query(None, description="Session ID to track recently generated projects"),
     exclude_titles: str = Query(None, description="Comma-separated list of project titles to exclude"),
 ):
     excluded_titles = []
