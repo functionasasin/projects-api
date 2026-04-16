@@ -46,11 +46,9 @@ _enhance_limiter = RateLimiter(limiter=Limiter(Rate(5, Duration.MINUTE)))
 async def generate_project_route(
     projects_collection: ProjectsCollection,
     project_type: ProjectType = Query(..., description="Project type (frontend, backend, fullstack)"),
-    exclude_titles: str = Query(None, description="Comma-separated list of project titles to exclude"),
+    exclude_titles: list[str] = Query(default=[], description="Project titles to exclude"),
 ):
-    excluded_titles = []
-    if exclude_titles:
-        excluded_titles = [title.strip() for title in exclude_titles.split(",") if title.strip()]
+    excluded_titles = [title for title in exclude_titles if title.strip()]
 
     project = await generate_random_project(
         projects_collection=projects_collection,
