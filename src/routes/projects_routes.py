@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Body, Depends, Query
+from fastapi_limiter.depends import RateLimiter
+from pyrate_limiter import Duration, Limiter, Rate
 
 from src.core import HTTPStatusCodes, InvalidIDException, get_api_key
 from src.dependencies import GeminiClient, ProjectsCollection
@@ -8,9 +10,13 @@ from src.services import create_new_project, delete_project, enhance_project, ge
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
+_generate_limiter = RateLimiter(limiter=Limiter(Rate(10, Duration.MINUTE)))
+_enhance_limiter = RateLimiter(limiter=Limiter(Rate(5, Duration.MINUTE)))
+
 
 @router.get(
     "/generate",
+    dependencies=[Depends(_generate_limiter)],
     response_model=SuccessResponse,
     response_description="Generate a project idea based on filters",
     responses={
@@ -62,6 +68,7 @@ async def generate_project_route(
 
 @router.get(
     "/enhance",
+    dependencies=[Depends(_enhance_limiter)],
     response_model=SuccessResponse,
     response_description="Enhance a project to a higher difficulty level",
     responses={
