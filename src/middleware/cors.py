@@ -23,12 +23,11 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
         return response
 
     def _set_cors_headers(self, response: Response, origin: str):
-        if origin in self.allowed_origins or "*" in self.allowed_origins:
+        if "*" in self.allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+        elif origin in self.allowed_origins:
             response.headers["Access-Control-Allow-Origin"] = origin
-        else:
-            response.headers["Access-Control-Allow-Origin"] = self.allowed_origins[0]
-
-        response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = (
             "Content-Type, Authorization, X-Requested-With, X-API-Key"
