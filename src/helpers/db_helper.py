@@ -1,4 +1,4 @@
-def project_helper(project) -> dict:
+def project_helper(project) -> dict | None:
     """
     Helper function to convert MongoDB project document to a response dictionary
     """
