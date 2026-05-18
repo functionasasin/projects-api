@@ -50,7 +50,6 @@ logs/
 *.sqlite3
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
 # Node modules (if using frontend)
