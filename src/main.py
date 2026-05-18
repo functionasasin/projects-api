@@ -60,8 +60,9 @@ app.add_exception_handler(ProjectAccessDeniedException, project_access_denied_ex
 app.include_router(projects_router)
 
 
-@app.get(
+@app.api_route(
     "/health",
+    methods=["GET", "HEAD"],
     tags=["health"],
     summary="Health check endpoint",
     description="Used for monitoring the application health status",
